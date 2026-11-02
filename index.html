@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rota Técnica IFSP + ETEC 3.0</title>
+<style>
+:root{--b1:#0b2a5b;--b2:#2f80ed;--b3:#dbeafe;--bg:#f4f8ff;--card:#fff;--tx:#0f1b33;--mu:#5b6b88;--bd:#d6e2f5;--ok:#22a559;--wa:#f2b705;--er:#e5484d}
+[data-t=dark]{--bg:#0a1428;--card:#122344;--tx:#e8f0ff;--mu:#9bb0d3;--bd:#233a66;--b3:#1b3566}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--tx);display:flex;min-height:100vh}
+nav{width:220px;background:var(--b1);color:#fff;padding:14px 10px;position:sticky;top:0;height:100vh;overflow:auto;flex-shrink:0}
+nav h1{font-size:15px;margin:4px 8px 14px}nav button{display:block;width:100%;text-align:left;background:none;border:0;color:#cfe0ff;padding:10px 12px;border-radius:10px;font-size:14px;cursor:pointer;margin-bottom:2px}
+nav button.on,nav button:hover{background:var(--b2);color:#fff}
+main{flex:1;padding:18px;min-width:0}#mb{display:none}
+h2{margin:0 0 14px;color:var(--b2)}h3{margin:0 0 8px;font-size:15px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}.g2{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}.g .c{margin:0}
+.k{font-size:24px;font-weight:700;color:var(--b2)}.s{font-size:12px;color:var(--mu)}
+.bar{height:10px;background:var(--b3);border-radius:9px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%}
+button.p,.bt{background:var(--b2);color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;font-size:13px}.bt.r{background:var(--er)}.bt.l{background:var(--b3);color:var(--tx)}
+input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit;font-size:13px}
+label{font-size:12px;color:var(--mu);display:block}.f{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:10px}
+.tag{display:inline-block;font-size:11px;background:var(--b3);border-radius:20px;padding:2px 8px;margin:2px 3px 2px 0}
+.op{display:block;width:100%;text-align:left;margin:4px 0;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);cursor:pointer}
+.op.ok{background:#c9f2d9;color:#064}.op.no{background:#fbd5d7;color:#700}
+canvas{width:100%;height:220px;display:block}
+@media(max-width:760px){nav{position:fixed;left:-230px;z-index:9;transition:.2s}nav.o{left:0}#mb{display:block;position:fixed;top:8px;right:8px;z-index:10}main{padding-top:50px}}
+</style></head><body>
+<button id="mb" class="bt" onclick="document.querySelector('nav').classList.toggle('o')">☰</button>
+<nav><h1>🎓 Rota Técnica<br>IFSP + ETEC 3.0</h1><div id="nv"></div></nav>
+<div id="pm" style="display:none;position:fixed;inset:0;background:#0008;z-index:99;align-items:center;justify-content:center"><div class="c" style="width:270px"><h3>🔒 PIN do responsável</h3><input id="pi" type="password" inputmode="numeric" maxlength="8" onkeydown="if(event.key=='Enter')pinOk()"><p id="pe" class="s" style="color:var(--er)"></p><button class="bt" onclick="pinOk()">Entrar</button> <button class="bt l" onclick="pinCancel()">Cancelar</button></div></div><div id="tt" style="display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--b1);color:#fff;padding:10px 16px;border-radius:10px;z-index:99"></div>
+<main id="m"></main>
+<script>
+/* ===== Utilidades e estado ===== */
+const $=s=>document.querySelector(s),KEY='rt3',D=['Português','Matemática','Ciências','História','Geografia','Inglês','Arte','Educação Física'],
+TP=['Resumo','Mapa Mental','Infográfico','Exercícios','Revisão','Vídeo','PDF','Simulado'],ST=['Pendente','Em andamento','Concluído'],NV=['Básico','Intermediário','Avançado'],AN=['6º','7º','8º','9º'],BI=['1º','2º','3º','4º'],RL=['IFSP','ETEC','Ambos'],IV=[1,7,15,30,60],
+TT=['Iniciante','Explorador','Pesquisador','Especialista','Campeão'];
+const today=()=>new Date().toISOString().slice(0,10),addD=(n,d=new Date())=>{d=new Date(d);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)},
+esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+opt=(a,s,all)=>(all?`<option value="">${all}</option>`:'')+a.map(x=>`<option ${x==s?'selected':''}>${x}</option>`).join(''),
+uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+col=v=>v<40?'var(--er)':v<70?'var(--wa)':'var(--ok)',
+bar=(v,c)=>`<div class="bar"><i style="width:${v}%;background:${c||col(v)}"></i></div>`;
+let S,cur='dash',SIM=null,F={},QF={},UN=false;const LOCK=['resp','cfg','bkp'],PIN='0111';
+let PCB=null;function askPin(cb){PCB=cb;$('#pm').style.display='flex';$('#pi').value='';$('#pe').textContent='';setTimeout(()=>$('#pi').focus(),50)}
+function pinOk(){if($('#pi').value===PIN){UN=true;$('#pm').style.display='none';if(PCB)PCB()}else $('#pe').textContent='PIN incorreto.'}
+function pinCancel(){$('#pm').style.display='none'}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function weekStart(){const d=new Date(),w=(d.getDay()+6)%7;return addD(-w)}
+function ev(k,n=1){for(let i=0;i<n;i++)S.log.push({d:today(),k})}
+function wk(k){const w=weekStart();return S.log.filter(l=>l.k==k&&l.d>=w).length}
+function addXP(n){S.xp+=n}
+const lvl=()=>Math.floor(S.xp/200)+1,rank=()=>TT[Math.min(4,Math.floor((lvl()-1)/2))];
+const pctOf=(a,b)=>b?Math.round(a/b*100):0;
+const cnt=k=>S.log.filter(l=>l.k==k).length;
+
+/* ===== Dados demonstrativos ===== */
+function seed(){
+ let s=1;const R=()=>(s=(s*9301+49297)%233280)/233280;
+ S={nome:'Estudante',theme:'light',metaSem:5,metaMes:20,xp:0,min:0,ultimo:today(),log:[],resp:[],sims:[],cont:[],q:[],miss:[]};
+ const C=`Português|Interpretação de texto|Resumo|6º|1º|Básico|Ambos
+Português|Gramática: classes de palavras|Exercícios|7º|1º|Intermediário|ETEC
+Português|Figuras de linguagem|Mapa Mental|8º|2º|Intermediário|IFSP
+Português|Redação dissertativa|Revisão|9º|3º|Avançado|IFSP
+Matemática|Frações e decimais|Exercícios|6º|1º|Básico|Ambos
+Matemática|Porcentagem|Resumo|7º|2º|Intermediário|Ambos
+Matemática|Equações do 1º grau|Exercícios|8º|2º|Intermediário|IFSP
+Matemática|Geometria: áreas|Infográfico|8º|3º|Intermediário|ETEC
+Matemática|Sistemas e funções|Revisão|9º|4º|Avançado|IFSP
+Ciências|Células e seres vivos|Mapa Mental|6º|1º|Básico|ETEC
+Ciências|Ecologia e cadeias alimentares|Resumo|7º|2º|Básico|Ambos
+Ciências|Química: átomos e tabela periódica|Vídeo|9º|3º|Avançado|IFSP
+História|Brasil Colonial|Resumo|7º|1º|Básico|Ambos
+História|Revolução Industrial|Infográfico|8º|2º|Intermediário|ETEC
+Geografia|Cartografia e escalas|Exercícios|6º|1º|Básico|Ambos
+Geografia|Globalização|Resumo|9º|3º|Intermediário|IFSP
+Inglês|Simple Present e Past|Exercícios|7º|2º|Básico|Ambos
+Inglês|Leitura de textos técnicos|PDF|9º|4º|Intermediário|ETEC
+Arte|Movimentos artísticos|Mapa Mental|8º|3º|Básico|Ambos
+Educação Física|Saúde e qualidade de vida|Resumo|6º|2º|Básico|Ambos`.split('\n');
+ C.forEach((l,i)=>{const [d,t,tp,a,b,n,r]=l.split('|'),st=ST[i%3],dom=st=='Concluído'?60+Math.floor(R()*40):st=='Em andamento'?20+Math.floor(R()*40):Math.floor(R()*15);
+  const c={id:uid(),t,desc:'Material de estudo sobre '+t.toLowerCase()+'.',d,a,b,n,tp,link:'',img:'',anex:[],st,dom,r,rev:null};
+  if(st=='Concluído')c.rev={i:i%5,next:addD((i%4)-1)};S.cont.push(c)});
+ const mk=(d,p,ans,ex,r,n,a,i)=>{const o=[ans,ans+1,ans-1,ans+2].map(String),sh=(i%4),x=o.splice(0,1)[0];o.splice(sh,0,x);S.q.push({id:uid(),p,alt:o,c:sh,ex,d,n,a,r})};
+ const H=`Português|Qual é o antônimo de "efêmero"?|Passageiro;Duradouro;Breve;Fugaz|1|Efêmero é o que dura pouco; o oposto é duradouro.|Ambos
+Português|Em "Choveu muito", o sujeito é:|Muito;Choveu;Inexistente;Oculto|2|Verbos de fenômeno da natureza não têm sujeito.|ETEC
+Português|Qual figura de linguagem aparece em "O tempo voa"?|Metáfora;Ironia;Hipérbole;Antítese|0|Compara o tempo a algo que voa sem usar "como".|IFSP
+Português|A palavra "rapidamente" é:|Adjetivo;Advérbio;Substantivo;Verbo|1|Termina em -mente e indica modo.|Ambos
+Português|Qual frase está correta?|Houveram erros;Haviam erros;Houve erros;Houvemos erros|2|Haver no sentido de existir é impessoal.|IFSP
+Ciências|A organela que realiza a fotossíntese é:|Mitocôndria;Cloroplasto;Núcleo;Ribossomo|1|Os cloroplastos contêm clorofila.|Ambos
+Ciências|O gás absorvido pelas plantas na fotossíntese é:|Oxigênio;Nitrogênio;Gás carbônico;Hidrogênio|2|Elas absorvem CO2 e liberam O2.|Ambos
+Ciências|O símbolo químico do sódio é:|S;So;Na;Sd|2|Vem do latim natrium.|IFSP
+Ciências|Qual é a unidade de medida de força no SI?|Joule;Newton;Watt;Pascal|1|Newton (N).|ETEC
+Ciências|Em uma cadeia alimentar, o produtor é:|Fungo;Planta;Carnívoro;Herbívoro|1|Produz o próprio alimento.|Ambos
+História|A Revolução Industrial começou em qual país?|França;Brasil;Inglaterra;Alemanha|2|Século XVIII, na Inglaterra.|ETEC
+História|O Brasil foi colonizado por:|Espanha;Portugal;França;Holanda|1|Chegada em 1500.|Ambos
+História|A Lei Áurea, de 1888, aboliu:|A monarquia;A escravidão;O voto;O Império|1|Assinada pela Princesa Isabel.|Ambos
+Geografia|Linha que divide o globo em Norte e Sul:|Meridiano;Trópico;Equador;Greenwich|2|O Equador é o paralelo 0°.|Ambos
+Geografia|Escala 1:100.000 significa que 1 cm no mapa equivale a:|100 m;1 km;10 km;100 km|1|100.000 cm = 1 km.|IFSP
+Inglês|Choose: She ___ to school every day.|go;goes;going;gone|1|Terceira pessoa do singular leva -s.|Ambos
+Inglês|Past of "write":|writed;wrote;written;writes|1|Verbo irregular.|ETEC
+Inglês|"Thank you" em português significa:|Por favor;Obrigado;Desculpe;De nada|1|Agradecimento.|Ambos
+Arte|O Cubismo teve como expoente:|Monet;Picasso;Da Vinci;Portinari|1|Pablo Picasso.|Ambos
+Educação Física|Qual capacidade física o alongamento desenvolve?|Força;Flexibilidade;Velocidade;Potência|1|Amplitude de movimento.|Ambos`.split('\n');
+ H.forEach((l,i)=>{const [d,p,al,c,ex,r]=l.split('|');S.q.push({id:uid(),p,alt:al.split(';'),c:+c,ex,d,n:NV[i%3],a:AN[i%4],r})});
+ for(let i=0;i<10;i++){const p=10*(i%9+1),b=20*(i+2);mk('Matemática',`Quanto é ${p}% de ${b}?`,p*b/100,`${p}/100 × ${b}.`,'Ambos','Básico','7º',i)}
+ for(let i=0;i<10;i++){const a=i+3,x=i+5;mk('Matemática',`Resolva: x + ${a} = ${x+a}`,x,`x = ${x+a} − ${a}.`,'IFSP','Básico','8º',i+1)}
+ for(let i=0;i<10;i++){const l=i+2,h=i+4;mk('Matemática',`Área de um retângulo ${l} cm × ${h} cm (cm²):`,l*h,'Área = base × altura.','ETEC','Intermediário','8º',i+2)}
+ const ds=[['Meta: 20 questões','q',20,60],['Fazer 1 simulado','s',1,80],['Concluir 3 conteúdos','c',3,70],['Revisar conteúdos (2)','r',2,40],['Revisar Matemática: 10 questões','q',10,30]];
+ ds.forEach(x=>S.miss.push({id:uid(),t:x[0],k:x[1],m:x[2],xp:x[3],ok:false}));
+ for(let i=0;i<150;i++){const d=Math.floor(R()*150);S.log.push({d:addD(-d),k:'q'})}
+ for(let i=0;i<40;i++){const q=S.q[Math.floor(R()*S.q.length)];S.resp.push({q:q.id,d:q.d,ok:R()<(q.d=='Matemática'?.8:q.d=='Ciências'?.55:.68),dt:addD(-Math.floor(R()*100))})}
+ [['IFSP',20,6,42,addD(-40)],['ETEC',16,9,36,addD(-20)],['Geral',22,3,30,addD(-5)]].forEach((x,i)=>S.sims.push({id:uid(),nome:'Simulado '+(i+1)+' '+x[0],f:x[0],ac:x[1],er:x[2],tmp:x[3],dt:x[4],pct:pctOf(x[1],x[1]+x[2])}));
+ S.q.forEach(q=>q.sug=1);S.v2=1;S.xp=360;S.min=420;save()}
+function load(){try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+ if(!S||!S.cont)seed();if(!S.v2){S.q.forEach(q=>q.sug=1);S.v2=1}const prev=S.ultimo;S.ultimo=today();S.prev=S.prev&&prev==today()?S.prev:prev;document.documentElement.dataset.t=S.theme;save()}
+
+/* ===== Gráficos Canvas ===== */
+function chart(id,lab,val,max,line){const c=document.getElementById(id);if(!c)return;const r=devicePixelRatio||1,w=c.clientWidth,h=220;c.width=w*r;c.height=h*r;
+ const x=c.getContext('2d');x.scale(r,r);x.clearRect(0,0,w,h);const cs=getComputedStyle(document.body),tx=cs.color,n=val.length||1,bw=(w-30)/n,top=18,bt=h-42;
+ x.font='11px sans-serif';x.fillStyle=tx;x.strokeStyle='#8aa0c8';x.globalAlpha=.3;x.beginPath();x.moveTo(25,bt);x.lineTo(w,bt);x.stroke();x.globalAlpha=1;
+ let pts=[];val.forEach((v,i)=>{const hh=(v/max)*(bt-top),px=30+i*bw;if(line){pts.push([px+bw/2-4,bt-hh])}else{x.fillStyle=col(max==100?v:50);if(max!=100)x.fillStyle='#2f80ed';x.fillRect(px+4,bt-hh,bw-10,hh)}
+  x.fillStyle=tx;x.textAlign='center';x.fillText(Math.round(v),px+bw/2-4,bt-(v/max)*(bt-top)-4);x.fillText(String(lab[i]).slice(0,bw<60?5:10),px+bw/2-4,h-24)});
+ if(line){x.strokeStyle='#2f80ed';x.lineWidth=2;x.beginPath();pts.forEach((p,i)=>i?x.lineTo(...p):x.moveTo(...p));x.stroke()}}
+function drawCharts(){
+ const pd=D.map(d=>{const a=S.cont.filter(c=>c.d==d);return pctOf(a.filter(c=>c.st=='Concluído').length,a.length)}),
+ dm=D.map(d=>{const a=S.cont.filter(c=>c.d==d);return a.length?Math.round(a.reduce((s,c)=>s+c.dom,0)/a.length):0}),
+ ac=D.map(d=>{const a=S.resp.filter(r=>r.d==d);return pctOf(a.filter(r=>r.ok).length,a.length)}),
+ ms=[],mv=[];for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);const k=d.toISOString().slice(0,7);ms.push(k.slice(5)+'/'+k.slice(2,4));mv.push(S.log.filter(l=>l.k=='q'&&l.d.startsWith(k)).length)}
+ chart('c1',D,pd,100);chart('c2',ms,mv,Math.max(5,...mv),1);chart('c3',D,dm,100);chart('c4',D,ac,100);chart('c5',S.sims.map(s=>s.nome.slice(-9)),S.sims.map(s=>s.pct),100)}
+
+/* ===== Revisão, medalhas ===== */
+const due=()=>S.cont.filter(c=>c.rev&&c.rev.next&&c.rev.next<=today());
+const MED=[['🌱 Primeiros passos',()=>cnt('q')>=1||S.resp.length>0],['📚 50 questões',()=>S.resp.length>=50],['📝 Simulador',()=>S.sims.length>=1],['⏱️ 10 horas',()=>S.min>=600],
+['🏅 Campeão IFSP',()=>S.sims.some(s=>s.f=='IFSP'&&s.pct>=80)],['🏅 Campeão ETEC',()=>S.sims.some(s=>s.f=='ETEC'&&s.pct>=80)],['🔁 Revisor (5)',()=>cnt('r')>=5],['⭐ Nível 5',()=>lvl()>=5]];
+const meds=()=>MED.filter(m=>m[1]());
+
+/* ===== Views ===== */
+const V={
+dash(){const t=S.cont.length,cc=S.cont.filter(c=>c.st=='Concluído').length,prog=t?Math.round(S.cont.reduce((s,c)=>s+c.dom,0)/t):0,w=wk('c')+wk('s')+wk('q')/10;
+ const k=(a,b)=>`<div class="c"><div class="k">${a}</div><div class="s">${b}</div></div>`;
+ return `<h2>Olá, ${esc(S.nome)}! 👋</h2><div class="g">${k(prog+'%','Progresso geral')}${k((S.min/60).toFixed(1)+' h','Horas estudadas')}${k(S.xp,'XP · Nível '+lvl()+' ('+rank()+')')}${k(meds().length+'/'+MED.length,'Medalhas')}${k(t,'Conteúdos cadastrados')}${k(cc,'Conteúdos concluídos')}${k(S.resp.length,'Questões respondidas')}${k(S.sims.length,'Simulados realizados')}${k(S.prev||'-','Último acesso')}</div>
+ <div class="c"><h3>Meta semanal: ${wk('c')} de ${S.metaSem} conteúdos concluídos</h3>${bar(Math.min(100,pctOf(wk('c'),S.metaSem)),'var(--b2)')}</div>
+ <div class="c"><h3>Registrar tempo de estudo</h3><div class="f"><input id="mn" type="number" min="1" placeholder="minutos"><button class="bt" onclick="addMin()">Registrar (+XP)</button></div></div>
+ <div class="c"><h3>🔁 Revisar hoje: ${due().length}</h3>${due().slice(0,3).map(c=>`<span class="tag">${esc(c.t)}</span>`).join('')||'<span class="s">Nada para hoje.</span>'}</div>`},
+cont(){const a=S.cont.filter(c=>(!F.d||c.d==F.d)&&(!F.a||c.a==F.a)&&(!F.b||c.b==F.b)&&(!F.n||c.n==F.n)&&(!F.st||c.st==F.st)&&(!F.r||c.r==F.r||c.r=='Ambos'));
+ const fl=(id,arr,l)=>`<div><label>${l}</label><select onchange="F['${id}']=this.value;show('cont')">${opt(arr,F[id],'Todos')}</select></div>`;
+ return `<h2>Conteúdos</h2><div class="c"><h3>Novo conteúdo</h3><div class="f"><div><label>Título</label><input id="t"></div><div><label>Disciplina</label><select id="d">${opt(D)}</select></div><div><label>Ano</label><select id="a">${opt(AN)}</select></div><div><label>Bimestre</label><select id="b">${opt(BI)}</select></div><div><label>Nível</label><select id="n">${opt(NV)}</select></div><div><label>Tipo</label><select id="tp">${opt(TP)}</select></div><div><label>Status</label><select id="st">${opt(ST)}</select></div><div><label>Relevância</label><select id="r">${opt(RL,'Ambos')}</select></div><div><label>Link</label><input id="lk"></div><div><label>Imagem</label><input id="im" type="file" accept="image/*"></div><div><label>Anexos (nomes)</label><input id="ax" type="file" multiple></div></div><label>Descrição</label><textarea id="ds" rows="2"></textarea><br><button class="bt" onclick="addCont()">Salvar</button></div>
+ <div class="f">${fl('d',D,'Disciplina')}${fl('a',AN,'Ano')}${fl('b',BI,'Bimestre')}${fl('n',NV,'Nível')}${fl('st',ST,'Status')}${fl('r',['IFSP','ETEC'],'Relevância')}</div>
+ <div class="g g2">${a.map(c=>`<div class="c">${c.img?`<img src="${c.img}" style="max-width:100%;max-height:90px;border-radius:8px">`:''}<h3>${esc(c.t)}</h3><span class="tag">${c.d}</span><span class="tag">${c.a} ano · ${c.b} bim.</span><span class="tag">${c.n}</span><span class="tag">${c.tp}</span><span class="tag">${c.r}</span>${c.link?`<a class="tag" href="${esc(c.link)}" target="_blank">🔗 link</a>`:''}${(c.anex||[]).map(x=>`<span class="tag">📎${esc(x)}</span>`).join('')}<p class="s">${esc(c.desc)}</p>
+ <label>Domínio: ${c.dom}%</label>${bar(c.dom)}<input type="range" value="${c.dom}" onchange="setDom('${c.id}',+this.value)"><div class="f" style="margin-top:8px"><select onchange="setSt('${c.id}',this.value)">${opt(ST,c.st)}</select><button class="bt r" onclick="delC('${c.id}')">Excluir</button></div></div>`).join('')||'<p class="s">Nenhum conteúdo.</p>'}</div>`},
+quest(){const a=S.q.filter(q=>(!QF.d||q.d==QF.d)&&(!QF.r||q.r==QF.r||q.r=='Ambos')).slice(0,25),ok=S.resp.filter(r=>r.ok).length;
+ return `<h2>Banco de questões</h2><p class="s">As questões marcadas como 💡 Sugestão de treino são exercícios de exemplo. Você tem 2 tentativas antes de ver a explicação.</p><div class="g"><div class="c"><div class="k" style="color:var(--ok)">${ok}</div><div class="s">Acertos</div></div><div class="c"><div class="k" style="color:var(--er)">${S.resp.length-ok}</div><div class="s">Erros</div></div><div class="c"><div class="k">${pctOf(ok,S.resp.length)}%</div><div class="s">Aproveitamento</div></div></div>
+ ${UN?'':'<button class="bt l" onclick="askPin(()=>show(\'quest\'))">🔒 Cadastrar questão (PIN do responsável)</button>'}<div class="c" ${UN?'':'style="display:none"'}><h3>Nova questão</h3><div class="f"><div><label>Disciplina</label><select id="qd">${opt(D)}</select></div><div><label>Nível</label><select id="qn">${opt(NV)}</select></div><div><label>Ano</label><select id="qa">${opt(AN)}</select></div><div><label>Relevância</label><select id="qr">${opt(RL,'Ambos')}</select></div></div><label>Pergunta</label><textarea id="qp" rows="2"></textarea><div class="f"><input id="q0" placeholder="Alternativa A"><input id="q1" placeholder="Alternativa B"><input id="q2" placeholder="Alternativa C"><input id="q3" placeholder="Alternativa D"><select id="qc"><option value="0">Correta: A</option><option value="1">Correta: B</option><option value="2">Correta: C</option><option value="3">Correta: D</option></select></div><label>Explicação</label><input id="qe"><br><br><button class="bt" onclick="addQ()">Salvar questão</button></div>
+ <div class="f"><div><label>Disciplina</label><select onchange="QF.d=this.value;show('quest')">${opt(D,QF.d,'Todas')}</select></div><div><label>Relevância</label><select onchange="QF.r=this.value;show('quest')">${opt(['IFSP','ETEC'],QF.r,'Todas')}</select></div></div>
+ ${a.map(q=>`<div class="c" id="q${q.id}"><span class="tag">${q.d}</span><span class="tag">${q.n}</span><span class="tag">${q.r}</span>${q.sug?'<span class="tag">💡 Sugestão de treino</span>':'<span class="tag">📘 Cadastrada</span>'}<h3>${esc(q.p)}</h3>${q.alt.map((x,i)=>`<button class="op" onclick="ans('${q.id}',${i})">${'ABCD'[i]}) ${esc(x)}</button>`).join('')}<div class="s"></div></div>`).join('')}
+ <div class="c"><h3>Histórico recente</h3>${S.resp.slice(-8).reverse().map(r=>`<span class="tag">${r.ok?'✅':'❌'} ${r.d} ${r.dt}</span>`).join('')}</div>`},
+sim(){return `<h2>Simulados</h2>${SIM?simRun():`<div class="c"><h3>Criar simulado</h3><div class="f"><div><label>Foco</label><select id="sf">${opt(['IFSP','ETEC','Geral'])}</select></div><div><label>Disciplina</label><select id="sd">${opt(D,'','Todas')}</select></div><div><label>Questões</label><input id="sn" type="number" value="10" min="3" max="30"></div></div><button class="bt" onclick="startSim()">Iniciar</button></div>
+ ${S.sims.slice().reverse().map(simCard).join('')}`}`},
+des(){return `<h2>Desempenho</h2>${[['c1','Progresso por disciplina (% concluído)'],['c2','Evolução mensal (questões)'],['c3','Domínio por matéria (%)'],['c4','Acertos por tema (%)'],['c5','Simulados (%)']].map(x=>`<div class="c"><h3>${x[1]}</h3><canvas id="${x[0]}"></canvas></div>`).join('')}`},
+rev(){const d=due();return `<h2>Revisões</h2><div class="c"><h3>🔁 REVISAR HOJE (${d.length})</h3>${d.map(c=>`<p><b>${esc(c.t)}</b> <span class="tag">${c.d}</span> <button class="bt" onclick="doRev('${c.id}')">Revisei (+20 XP)</button></p>`).join('')||'<p class="s">Nenhuma revisão pendente. 🎉</p>'}</div>
+ <div class="c"><h3>Próximas (1, 7, 15, 30 e 60 dias)</h3>${S.cont.filter(c=>c.rev&&c.rev.next>today()).sort((a,b)=>a.rev.next>b.rev.next?1:-1).map(c=>`<p>${c.rev.next} — ${esc(c.t)} <span class="tag">ciclo ${c.rev.i+1}/5</span></p>`).join('')}</div>`},
+mis(){return `<h2>Missões semanais</h2>${S.miss.map(m=>{const p=Math.min(m.m,wk(m.k));return `<div class="c"><h3>${esc(m.t)} <span class="tag">+${m.xp} XP</span></h3>${bar(pctOf(p,m.m),'var(--b2)')}<span class="s">${p}/${m.m}</span> ${m.ok?'✅ Concluída':p>=m.m?`<button class="bt" onclick="claim('${m.id}')">Resgatar XP</button>`:''}</div>`}).join('')}
+ <div class="c"><h3>Nova missão</h3><div class="f"><input id="mt" placeholder="Título"><select id="mk"><option value="q">Questões</option><option value="s">Simulados</option><option value="c">Conteúdos</option><option value="r">Revisões</option></select><input id="mm" type="number" value="5" min="1"><input id="mx" type="number" value="30" min="5"></div><button class="bt" onclick="addMis()">Criar</button></div>`},
+gam(){const top=S.sims.slice().sort((a,b)=>b.pct-a.pct).slice(0,5);return `<h2>Gamificação</h2><div class="c"><div class="k">Nível ${lvl()} · ${rank()}</div>${bar(S.xp%200/2,'var(--b2)')}<span class="s">${S.xp} XP · faltam ${200-S.xp%200} para o próximo nível</span></div>
+ <div class="c"><h3>Medalhas e conquistas</h3>${MED.map(m=>`<span class="tag" style="opacity:${m[1]()?1:.35}">${m[0]}</span>`).join('')}</div>
+ <div class="c"><h3>🏆 Ranking pessoal (simulados)</h3>${top.map((s,i)=>`<p>${i+1}º — ${esc(s.nome)}: <b>${s.pct}%</b></p>`).join('')}</div>`},
+resp(){const m=D.map(d=>{const a=S.cont.filter(c=>c.d==d);return[d,a.length?Math.round(a.reduce((s,c)=>s+c.dom,0)/a.length):0]}).sort((a,b)=>b[1]-a[1]),t=S.cont.length;
+ return `<h2>Painel do responsável</h2><div class="g"><div class="c"><div class="k">${pctOf(S.cont.reduce((s,c)=>s+c.dom,0),t*100)}%</div><div class="s">Progresso geral</div></div><div class="c"><div class="k">${(S.min/60).toFixed(1)} h</div><div class="s">Tempo estudado</div></div><div class="c"><div class="k">${S.sims.length}</div><div class="s">Simulados</div></div><div class="c"><div class="k">${pctOf(S.cont.filter(c=>c.st=='Concluído').length,t)}%</div><div class="s">Taxa de conclusão</div></div></div>
+ <div class="c"><h3>💪 Mais fortes</h3>${m.slice(0,3).map(x=>`${x[0]}: ${x[1]}%${bar(x[1])}`).join('')}</div><div class="c"><h3>⚠️ Mais fracas</h3>${m.slice(-3).reverse().map(x=>`${x[0]}: ${x[1]}%${bar(x[1])}`).join('')}</div>
+ <div class="c"><h3>Próximas revisões</h3>${S.cont.filter(c=>c.rev&&c.rev.next).sort((a,b)=>a.rev.next>b.rev.next?1:-1).slice(0,5).map(c=>`<p>${c.rev.next} — ${esc(c.t)}</p>`).join('')}</div>`},
+cfg(){return `<h2>Configurações</h2><div class="c"><div class="f"><div><label>Nome da estudante</label><input id="cn" value="${esc(S.nome)}"></div><div><label>Meta semanal (conteúdos)</label><input id="cs" type="number" value="${S.metaSem}"></div><div><label>Meta mensal (conteúdos)</label><input id="cm" type="number" value="${S.metaMes}"></div><div><label>Tema</label><select id="ct"><option value="light" ${S.theme=='light'?'selected':''}>Claro</option><option value="dark" ${S.theme=='dark'?'selected':''}>Escuro</option></select></div></div><button class="bt" onclick="saveCfg()">Salvar</button> <button class="bt r" onclick="if(this.dataset.c){localStorage.removeItem(KEY);location.reload()}else{this.dataset.c=1;this.textContent='Clique de novo para confirmar'}">Resetar dados</button></div>`},
+bkp(){return `<h2>Backup</h2><div class="c"><button class="bt" onclick="expo()">⬇️ Exportar JSON (backup completo)</button><br><br><label>Importar / restaurar JSON</label><input type="file" accept=".json" onchange="impo(this.files[0])"></div>`}};
+const NAV=[['dash','🏠 Dashboard'],['cont','📚 Conteúdos'],['quest','❓ Questões'],['sim','📝 Simulados'],['des','📊 Desempenho'],['rev','🔁 Revisões'],['mis','🎯 Missões'],['gam','🏆 Gamificação'],['resp','👪 Responsáveis'],['cfg','⚙️ Configurações'],['bkp','💾 Backup']];
+
+/* ===== Ações ===== */
+function show(v){if(LOCK.includes(v)&&!UN){askPin(()=>show(v));return}cur=v;$('#nv').innerHTML=NAV.map(n=>`<button class="${n[0]==v?'on':''}" onclick="SIM=null;show('${n[0]}')">${n[1]}</button>`).join('');$('#m').innerHTML=V[v]();document.querySelector('nav').classList.remove('o');if(v=='des')drawCharts();window.scrollTo(0,0)}
+const g=id=>$('#'+id).value;
+function addMin(){const n=+g('mn');if(n>0){S.min+=n;addXP(Math.round(n/3));save();show('dash')}}
+function rd(f){return new Promise(r=>{if(!f)return r('');const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)})}
+async function addCont(){if(!g('t').trim())return alert('Informe o título.');const im=await rd($('#im').files[0]);
+ const c={id:uid(),t:g('t'),desc:g('ds'),d:g('d'),a:g('a'),b:g('b'),n:g('n'),tp:g('tp'),link:g('lk'),img:im.length<400000?im:'',anex:[...$('#ax').files].map(f=>f.name),st:g('st'),dom:0,r:g('r'),rev:null};S.cont.push(c);if(c.st=='Concluído')done(c);save();show('cont')}
+function done(c){if(!c.rev){c.rev={i:0,next:addD(IV[0])};ev('c');addXP(50);if(c.dom<70)c.dom=70}}
+function setSt(id,v){const c=S.cont.find(x=>x.id==id);c.st=v;if(v=='Concluído')done(c);save();show('cont')}
+function setDom(id,v){S.cont.find(x=>x.id==id).dom=v;save();show('cont')}
+function delC(id){S.cont=S.cont.filter(c=>c.id!=id);save();show('cont')}
+function doRev(id){const c=S.cont.find(x=>x.id==id);c.rev.i++;c.rev.next=c.rev.i<IV.length?addD(IV[c.rev.i]):null;if(!c.rev.next)c.rev.i=IV.length-1;c.dom=Math.min(100,c.dom+5);ev('r');addXP(20);save();show('rev')}
+function addQ(){const alt=[0,1,2,3].map(i=>g('q'+i).trim());if(!g('qp').trim()||alt.some(x=>!x))return alert('Preencha a pergunta e as 4 alternativas.');
+ S.q.push({id:uid(),p:g('qp'),alt,c:+g('qc'),ex:g('qe'),d:g('qd'),n:g('qn'),a:g('qa'),r:g('qr')});save();show('quest')}
+function ans(id,i){const q=S.q.find(x=>x.id==id),box=$('#q'+id);if(box.dataset.done)return;const t=+(box.dataset.t||0)+1;box.dataset.t=t;const ok=i==q.c,bs=box.querySelectorAll('.op'),ms=box.lastElementChild;if(!ok&&t<2){bs[i].classList.add('no');bs[i].disabled=true;ms.innerHTML='🤔 Não foi dessa vez. Tente mais uma vez!';return}box.dataset.done=1;
+ box.querySelectorAll('.op').forEach((b,j)=>{if(j==q.c)b.classList.add('ok');else if(j==i)b.classList.add('no')});
+ box.lastElementChild.innerHTML=(ok?'✅ Acertou! +'+(t==1?10:5)+' XP. ':'❌ Errou. +2 XP. ')+esc(q.ex);S.resp.push({q:id,d:q.d,ok,dt:today()});ev('q');addXP(ok?(t==1?10:5):2);save()}
+function startSim(){const f=g('sf'),d=g('sd');let p=S.q.filter(q=>(f=='Geral'||q.r==f||q.r=='Ambos')&&(!d||q.d==d));p=p.sort(()=>Math.random()-.5).slice(0,+g('sn'));if(p.length<3)return alert('Poucas questões para este filtro.');SIM={qs:p,f,t0:Date.now()};show('sim')}
+function simRun(){return `<div class="c"><h3>Simulado ${SIM.f} — ${SIM.qs.length} questões</h3></div>${SIM.qs.map((q,n)=>`<div class="c"><h3>${n+1}. ${esc(q.p)}</h3>${q.alt.map((x,i)=>`<label style="color:var(--tx);font-size:14px"><input type="radio" name="s${n}" value="${i}" style="width:auto"> ${'ABCD'[i]}) ${esc(x)}</label>`).join('')}</div>`).join('')}<button class="bt" onclick="endSim()">Finalizar e ver relatório</button>`}
+function endSim(){let ac=0;const rows=SIM.qs.map((q,n)=>{const s=document.querySelector(`input[name=s${n}]:checked`),ok=s&&+s.value==q.c;if(ok)ac++;S.resp.push({q:q.id,d:q.d,ok:!!ok,dt:today()});return `<p>${ok?'✅':'❌'} ${esc(q.p)}<br><span class="s">Correta: ${'ABCD'[q.c]}) ${esc(q.alt[q.c])} — ${esc(q.ex)}</span></p>`}).join(''),
+ er=SIM.qs.length-ac,tmp=Math.max(1,Math.round((Date.now()-SIM.t0)/60000)),pct=pctOf(ac,SIM.qs.length),sm={id:uid(),nome:'Simulado '+(S.sims.length+1)+' '+SIM.f,f:SIM.f,ac,er,tmp,dt:today(),pct};
+ S.sims.push(sm);ev('s');ev('q',SIM.qs.length);addXP(100+ac*5);S.min+=tmp;save();SIM=null;show('sim');$('#m').insertAdjacentHTML('beforeend',`<div class="c"><h3>Relatório final</h3>${simCard(sm,1)}${rows}</div>`);window.scrollTo(0,document.body.scrollHeight)}
+const cls=p=>p>=85?'Excelente 🏆':p>=70?'Muito bom':p>=50?'Em evolução':'Precisa reforçar';
+function simCard(s){return `<div class="c"><h3>${esc(s.nome)} <span class="s">${s.dt}</span></h3>✅ ${s.ac} acertos · ❌ ${s.er} erros · <b>${s.pct}%</b> · ⏱️ ${s.tmp} min · ${cls(s.pct)}${bar(s.pct)}</div>`}
+function claim(id){const m=S.miss.find(x=>x.id==id);m.ok=true;addXP(m.xp);save();show('mis')}
+function addMis(){if(!g('mt').trim())return;S.miss.push({id:uid(),t:g('mt'),k:g('mk'),m:+g('mm'),xp:+g('mx'),ok:false});save();show('mis')}
+function saveCfg(){S.nome=g('cn')||'Estudante';S.metaSem=+g('cs')||5;S.metaMes=+g('cm')||20;S.theme=g('ct');document.documentElement.dataset.t=S.theme;save();show('cfg')}
+function expo(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='rota-tecnica-backup-'+today()+'.json';a.click()}
+function impo(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.cont||!d.q)throw 0;S=d;save();document.documentElement.dataset.t=S.theme;show('dash');alert('Dados restaurados!')}catch(e){alert('Arquivo inválido.')}};r.readAsText(f)}
+addEventListener('resize',()=>{if(cur=='des')drawCharts()});
+alert=m=>{const t=$('#tt');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3500)};load();show('dash');
+</script></body></html>
